@@ -7,7 +7,7 @@ Students tap their RFID card at the classroom door. The system logs **entry** an
 
 ---
 
-![Dashboard Preview](docs/dashboard_preview.png)
+
 
 ---
 
@@ -54,7 +54,8 @@ auto-attendance/
 | Component | Cost (approx) |
 |-----------|--------------|
 | ESP32 Dev Board (any 38-pin) | ₹250 / $3 |
-| MFRC522 RFID Module | ₹80 / $1.50 |
+| MFRC522 RFID Module | ₹80 / $1.50 | <img width="288" height="288" alt="image" src="https://github.com/user-attachments/assets/d55e2a89-5792-4a9f-8bae-78bb1db62892" />
+
 | RFID Cards or Key Fobs (pack of 10) | ₹150 / $2 |
 | Green + Red LED + 220Ω resistors | ₹20 / $0.30 |
 | Active Buzzer 3.3V | ₹20 / $0.30 |
