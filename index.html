@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoAttend – Attendance Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0a0e1a;
+      --surface:  #111827;
+      --card:     #161d2f;
+      --border:   #1e2d4a;
+      --accent:   #00e5ff;
+      --green:    #00ff9d;
+      --red:      #ff4d6a;
+      --yellow:   #ffd60a;
+      --muted:    #4a5a7a;
+      --text:     #e8edf8;
+      --text-dim: #8899bb;
+      --font-head: 'Syne', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --radius:   12px;
+      --glow:     0 0 24px rgba(0,229,255,.18);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Background grid ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .wrapper { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 0 24px 60px; }
+
+    /* ── Header ── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 28px 0 32px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, var(--accent), #0077ff);
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 22px;
+    }
+    .logo-text { font-family: var(--font-head); font-weight: 800; font-size: 1.5rem; letter-spacing: -.02em; }
+    .logo-text span { color: var(--accent); }
+    .logo-sub { font-size: 0.7rem; color: var(--text-dim); letter-spacing: .1em; text-transform: uppercase; }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .ws-badge {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 100px; padding: 6px 14px; font-size: .75rem;
+      color: var(--text-dim);
+    }
+    .ws-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--muted); transition: background .3s;
+    }
+    .ws-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    .date-badge {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 100px; padding: 6px 14px; font-size: .75rem; color: var(--text-dim);
+    }
+
+    /* ── Stat Cards ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px 20px;
+      position: relative; overflow: hidden; cursor: default;
+      transition: border-color .25s, transform .2s;
+    }
+    .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--glow); }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .stat-card.present::before  { background: var(--green); }
+    .stat-card.total::before    { background: var(--accent); }
+    .stat-card.absent::before   { background: var(--red); }
+    .stat-card.taps::before     { background: var(--yellow); }
+
+    .stat-label { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; }
+    .stat-value { font-family: var(--font-head); font-size: 2.6rem; font-weight: 800; line-height: 1; }
+    .stat-card.present .stat-value  { color: var(--green); }
+    .stat-card.total   .stat-value  { color: var(--accent); }
+    .stat-card.absent  .stat-value  { color: var(--red); }
+    .stat-card.taps    .stat-value  { color: var(--yellow); }
+
+    /* ── Two column layout ── */
+    .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+    @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* ── Section Header ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title { font-family: var(--font-head); font-size: 1rem; font-weight: 600; letter-spacing: .04em; }
+
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .filter-btn {
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text-dim); border-radius: 100px;
+      padding: 6px 16px; font-family: var(--font-mono); font-size: .78rem;
+      cursor: pointer; transition: all .2s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--accent); border-color: var(--accent); color: #000;
+    }
+    input[type="date"] {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      border-radius: 100px; padding: 6px 16px; font-family: var(--font-mono); font-size: .78rem;
+      cursor: pointer; outline: none;
+    }
+    input[type="date"]:focus { border-color: var(--accent); }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: rgba(0,229,255,.05); border-bottom: 1px solid var(--border); }
+    th { text-align: left; padding: 14px 16px; font-size: .7rem; letter-spacing: .1em;
+         text-transform: uppercase; color: var(--text-dim); font-weight: 400; }
+    td { padding: 13px 16px; font-size: .82rem; border-bottom: 1px solid rgba(30,45,74,.5); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background .15s; }
+    tbody tr:hover { background: rgba(0,229,255,.04); }
+
+    .uid-cell { font-size: .75rem; color: var(--text-dim); font-family: var(--font-mono); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 100px; font-size: .72rem;
+      font-weight: 700; letter-spacing: .06em;
+    }
+    .badge.entry { background: rgba(0,255,157,.12); color: var(--green); border: 1px solid rgba(0,255,157,.25); }
+    .badge.exit  { background: rgba(255,77,106,.12); color: var(--red);   border: 1px solid rgba(255,77,106,.25); }
+    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    .duration-cell { color: var(--yellow); font-size: .8rem; }
+    .time-cell { color: var(--text-dim); font-size: .78rem; }
+
+    #records-empty { padding: 48px; text-align: center; color: var(--muted); font-size: .85rem; }
+
+    /* ── Side Panel ── */
+    .side-panel { display: flex; flex-direction: column; gap: 20px; }
+
+    /* Live Feed */
+    .live-feed {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .live-feed-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: pulse 1s infinite; }
+    .live-label { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); }
+    #live-feed-list { list-style: none; max-height: 340px; overflow-y: auto; }
+    #live-feed-list::-webkit-scrollbar { width: 4px; }
+    #live-feed-list::-webkit-scrollbar-track { background: transparent; }
+    #live-feed-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .feed-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; border-bottom: 1px solid rgba(30,45,74,.4);
+      animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform: translateX(10px); } }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-avatar {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: grid; place-items: center; font-size: .9rem; flex-shrink: 0;
+    }
+    .feed-avatar.entry { background: rgba(0,255,157,.15); }
+    .feed-avatar.exit  { background: rgba(255,77,106,.15); }
+    .feed-name { font-size: .82rem; font-family: var(--font-head); font-weight: 600; }
+    .feed-meta { font-size: .7rem; color: var(--text-dim); }
+    .feed-time { font-size: .7rem; color: var(--muted); margin-left: auto; white-space: nowrap; }
+
+    /* Register Panel */
+    .register-panel {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .register-panel h3 { font-family: var(--font-head); font-size: .95rem; font-weight: 600; margin-bottom: 16px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); display: block; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 9px 12px;
+      font-family: var(--font-mono); font-size: .82rem; outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+    .btn-primary {
+      width: 100%; background: var(--accent); color: #000; border: none;
+      border-radius: 8px; padding: 11px; font-family: var(--font-head);
+      font-weight: 800; font-size: .88rem; cursor: pointer; letter-spacing: .04em;
+      transition: opacity .2s, transform .15s;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* Simulate panel */
+    .simulate-panel {
+      background: var(--card); border: 1px dashed var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .simulate-panel h3 { font-family: var(--font-head); font-size: .95rem; font-weight: 600; margin-bottom: 4px; }
+    .simulate-panel p { font-size: .75rem; color: var(--text-dim); margin-bottom: 14px; }
+    .sim-row { display: flex; gap: 8px; }
+    .btn-sim {
+      flex: 1; border: 1px solid; border-radius: 8px; padding: 9px;
+      font-family: var(--font-mono); font-size: .78rem; cursor: pointer; transition: all .2s;
+      background: transparent;
+    }
+    .btn-sim.entry { color: var(--green); border-color: var(--green); }
+    .btn-sim.entry:hover { background: rgba(0,255,157,.1); }
+    .btn-sim.exit  { color: var(--red);   border-color: var(--red); }
+    .btn-sim.exit:hover  { background: rgba(255,77,106,.1); }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 20px;
+      font-size: .85rem; min-width: 260px; max-width: 340px;
+      transform: translateY(80px); opacity: 0;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1);
+      z-index: 1000; pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: var(--green); }
+    #toast.error   { border-color: var(--red); }
+    .toast-icon { margin-right: 8px; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      header { flex-direction: column; gap: 12px; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📡</div>
+      <div>
+        <div class="logo-text">Auto<span>Attend</span></div>
+        <div class="logo-sub">RFID Attendance System</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="ws-badge"><div class="ws-dot" id="ws-dot"></div><span id="ws-label">Connecting…</span></div>
+      <div class="date-badge" id="date-badge"></div>
+    </div>
+  </header>
+
+  <!-- ── Stats ── -->
+  <div class="stats-grid">
+    <div class="stat-card present">
+      <div class="stat-label">Present Today</div>
+      <div class="stat-value" id="stat-present">–</div>
+    </div>
+    <div class="stat-card total">
+      <div class="stat-label">Total Students</div>
+      <div class="stat-value" id="stat-total">–</div>
+    </div>
+    <div class="stat-card absent">
+      <div class="stat-label">Absent Today</div>
+      <div class="stat-value" id="stat-absent">–</div>
+    </div>
+    <div class="stat-card taps">
+      <div class="stat-label">Taps Today</div>
+      <div class="stat-value" id="stat-taps">–</div>
+    </div>
+  </div>
+
+  <!-- ── Main Grid ── -->
+  <div class="main-grid">
+
+    <!-- Left: Records Table -->
+    <div>
+      <div class="section-header">
+        <div class="section-title">Attendance Records</div>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterRecords('all', this)">All</button>
+        <button class="filter-btn" onclick="filterRecords('entry', this)">Entry</button>
+        <button class="filter-btn" onclick="filterRecords('exit',  this)">Exit</button>
+        <input type="date" id="date-filter" onchange="filterByDate(this.value)">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>UID</th>
+              <th>Event</th>
+              <th>Time</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody id="records-tbody">
+            <tr><td colspan="5" id="records-empty">Loading records…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right: Side Panel -->
+    <div class="side-panel">
+
+      <!-- Live Feed -->
+      <div class="live-feed">
+        <div class="live-feed-header">
+          <div class="live-dot"></div>
+          <span class="live-label">Live Activity</span>
+        </div>
+        <ul id="live-feed-list">
+          <li style="padding:20px;text-align:center;color:var(--muted);font-size:.8rem">Waiting for events…</li>
+        </ul>
+      </div>
+
+      <!-- Register Student -->
+      <div class="register-panel">
+        <h3>📋 Register Student Card</h3>
+        <div class="form-group">
+          <label>Card UID</label>
+          <input type="text" id="reg-uid" placeholder="e.g. A1B2C3D4" maxlength="20">
+        </div>
+        <div class="form-group">
+          <label>Student Name</label>
+          <input type="text" id="reg-name" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Roll No</label>
+          <input type="text" id="reg-roll" placeholder="e.g. 23CS001">
+        </div>
+        <div class="form-group">
+          <label>Class / Section</label>
+          <input type="text" id="reg-class" placeholder="e.g. CS-A 2nd Year">
+        </div>
+        <button class="btn-primary" onclick="registerStudent()">REGISTER CARD</button>
+      </div>
+
+      <!-- Simulate (dev/demo) -->
+      <div class="simulate-panel">
+        <h3>🧪 Test Simulator</h3>
+        <p>Simulate a card tap without hardware (demo / dev)</p>
+        <div class="form-group">
+          <label>Student Name</label>
+          <input type="text" id="sim-name" placeholder="Demo Student" value="Demo Student">
+        </div>
+        <div class="sim-row">
+          <button class="btn-sim entry" onclick="simulate('ENTRY')">→ ENTRY</button>
+          <button class="btn-sim exit"  onclick="simulate('EXIT')">← EXIT</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  // ── State ─────────────────────────────────────────
+  let allRecords   = [];
+  let currentFilter= 'all';
+  let simUID       = 'DEMO0000';
+
+  // ── Date badge ───────────────────────────────────
+  const dateBadge = document.getElementById('date-badge');
+  function updateDate() {
+    dateBadge.textContent = new Date().toLocaleDateString('en-IN', {
+      weekday:'short', year:'numeric', month:'short', day:'numeric'
+    });
+  }
+  updateDate();
+  setInterval(updateDate, 60000);
+
+  // ── WebSocket ─────────────────────────────────────
+  let ws;
+  function connectWS() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}`);
+
+    ws.onopen = () => {
+      document.getElementById('ws-dot').classList.add('connected');
+      document.getElementById('ws-label').textContent = 'Live';
+    };
+    ws.onclose = () => {
+      document.getElementById('ws-dot').classList.remove('connected');
+      document.getElementById('ws-label').textContent = 'Reconnecting…';
+      setTimeout(connectWS, 3000);
+    };
+    ws.onmessage = e => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'NEW_EVENT') {
+        allRecords.unshift(msg.record);
+        renderTable();
+        addLiveFeedItem(msg.record);
+        refreshStats();
+      }
+    };
+  }
+  connectWS();
+
+  // ── Fetch initial data ────────────────────────────
+  async function loadAll() {
+    const [recs, dash] = await Promise.all([
+      fetch('/api/attendance').then(r => r.json()),
+      fetch('/api/dashboard').then(r => r.json())
+    ]);
+    allRecords = recs;
+    renderTable();
+    applyStats(dash);
+
+    // Populate live feed from recent
+    if (dash.recentActivity) {
+      dash.recentActivity.slice(0,5).reverse().forEach(addLiveFeedItem);
+    }
+  }
+  loadAll();
+
+  // ── Stats ─────────────────────────────────────────
+  function applyStats(d) {
+    document.getElementById('stat-present').textContent = d.presentToday  ?? '–';
+    document.getElementById('stat-total').textContent   = d.totalStudents ?? '–';
+    document.getElementById('stat-absent').textContent  = Math.max(0, (d.totalStudents||0) - (d.presentToday||0));
+    document.getElementById('stat-taps').textContent    = d.tapsToday     ?? '–';
+  }
+  async function refreshStats() {
+    const d = await fetch('/api/dashboard').then(r => r.json());
+    applyStats(d);
+  }
+
+  // ── Table Render ──────────────────────────────────
+  function renderTable() {
+    const tbody = document.getElementById('records-tbody');
+    let rows = allRecords;
+    if (currentFilter !== 'all') rows = rows.filter(r => r.event_type?.toLowerCase() === currentFilter || r.eventType?.toLowerCase() === currentFilter);
+
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="5" id="records-empty">No records found.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(r => {
+      const et   = (r.event_type || r.eventType || '').toUpperCase();
+      const name = r.name || r.student || `UID-${r.uid}`;
+      const ts   = r.timestamp ? new Date(r.timestamp).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '–';
+      const date = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) : '';
+      const dur  = r.duration_s ? fmtDur(r.duration_s) : (r.durationFmt || '–');
+      return `
+        <tr>
+          <td><strong>${escHtml(name)}</strong>${r.roll_no ? `<br><span style="font-size:.72rem;color:var(--text-dim)">${escHtml(r.roll_no)}</span>` : ''}</td>
+          <td class="uid-cell">${escHtml(r.uid)}</td>
+          <td><span class="badge ${et.toLowerCase()}">${et}</span></td>
+          <td class="time-cell">${ts}<br><span style="font-size:.68rem">${date}</span></td>
+          <td class="duration-cell">${dur}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  function fmtDur(s) {
+    if (!s) return '–';
+    const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+    if (h) return `${h}h ${m}m`;
+    if (m) return `${m}m ${sec}s`;
+    return `${sec}s`;
+  }
+
+  function filterRecords(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('date-filter').value = '';
+    renderTable();
+  }
+
+  async function filterByDate(d) {
+    if (!d) { allRecords = await fetch('/api/attendance').then(r=>r.json()); renderTable(); return; }
+    allRecords = await fetch(`/api/attendance?date=${d}`).then(r=>r.json());
+    currentFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.filter-btn').classList.add('active');
+    renderTable();
+  }
+
+  // ── Live Feed ─────────────────────────────────────
+  const feedList = document.getElementById('live-feed-list');
+  function addLiveFeedItem(rec) {
+    const et   = (rec.event_type || rec.eventType || '').toUpperCase();
+    const name = rec.name || rec.student || `UID-${rec.uid}`;
+    const time = rec.timestamp ? new Date(rec.timestamp).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
+    const icon = et === 'ENTRY' ? '🟢' : '🔴';
+
+    // Remove "waiting" placeholder
+    if (feedList.querySelector('li[style]')) feedList.innerHTML = '';
+
+    const li = document.createElement('li');
+    li.className = 'feed-item';
+    li.innerHTML = `
+      <div class="feed-avatar ${et.toLowerCase()}">${icon}</div>
+      <div>
+        <div class="feed-name">${escHtml(name)}</div>
+        <div class="feed-meta">${et} · ${escHtml(rec.uid)}</div>
+      </div>
+      <div class="feed-time">${time}</div>`;
+    feedList.prepend(li);
+    // Keep only last 20
+    while (feedList.children.length > 20) feedList.removeChild(feedList.lastChild);
+  }
+
+  // ── Register Student ──────────────────────────────
+  async function registerStudent() {
+    const uid   = document.getElementById('reg-uid').value.trim().toUpperCase();
+    const name  = document.getElementById('reg-name').value.trim();
+    const roll  = document.getElementById('reg-roll').value.trim();
+    const cls   = document.getElementById('reg-class').value.trim();
+    if (!uid || !name) { showToast('UID and Name are required', 'error'); return; }
+
+    const r = await fetch('/api/students', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ uid, name, roll_no: roll, class: cls })
+    });
+    if (r.ok) {
+      showToast(`✅  ${name} registered successfully`, 'success');
+      document.getElementById('reg-uid').value = '';
+      document.getElementById('reg-name').value = '';
+      document.getElementById('reg-roll').value = '';
+      document.getElementById('reg-class').value = '';
+      refreshStats();
+    } else {
+      showToast('Registration failed', 'error');
+    }
+  }
+
+  // ── Simulate ──────────────────────────────────────
+  async function simulate(eventType) {
+    const name = document.getElementById('sim-name').value.trim() || 'Demo Student';
+    const r = await fetch('/api/simulate', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ uid: simUID, name, eventType })
+    });
+    const data = await r.json();
+    showToast(`🧪 Simulated ${eventType} for ${name}`, 'success');
+  }
+
+  // ── Toast ─────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.className = `show ${type}`;
+    t.innerHTML = msg;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.className = '', 3500);
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>
