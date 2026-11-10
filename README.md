@@ -209,6 +209,30 @@ It helps others find the project.
 
 ---
 
+## Skills & technologies
+
+`Arduino/C++` · `JavaScript` · `HTML/CSS`
+
+
+## Repository structure
+
+Key files and folders (not exhaustive):
+
+- `LICENSE`
+- `README.md`
+- `api_reference.md`
+- `attendance_firmware.ino`
+- `index.html`
+- `package.json`
+- `server.js`
+- `wiring_diagram.md`
+
+
+## How it works
+
+The main firmware sketch is `attendance_firmware.ino`. Open it in Arduino IDE, verify the board, pin mapping and library requirements, then compile and upload. Test hardware behaviour on the real circuit before relying on it.
+
+
 ## Maintenance & Audit
 
 - **Audit date:** 10 November 2026
