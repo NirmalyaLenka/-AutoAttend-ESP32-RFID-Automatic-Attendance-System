@@ -29,9 +29,9 @@ Students tap their RFID card at the classroom door. The system logs **entry** an
 
 ## 🗂️ Project Structure
 
-The checked-in files are at the repository root; the folder layout shown in older examples (\`firmware/\`, \`server/\`, \`hardware/\`, and \`docs/\`) is not present.
+The checked-in files are at the repository root; the folder layout shown in older examples (`firmware/`, `server/`, `hardware/`, and `docs/`) is not present.
 
-\`\`\`text
+```text
 .
 ├── attendance_firmware.ino   # ESP32 RFID reader, Wi-Fi client and GPIO feedback
 ├── server.js                 # Express REST API, WebSocket broadcast and SQLite setup
@@ -40,9 +40,9 @@ The checked-in files are at the repository root; the folder layout shown in olde
 ├── api_reference.md          # REST and WebSocket API notes
 ├── wiring_diagram.md         # Hardware pinout and bill of materials
 └── LICENSE
-\`\`\`
+```
 
-The backend's static-file middleware points to a \`public/\` directory, but that directory is absent from the current tree. Consequently, the checked-in \`index.html\` is not automatically served at \`/\`. See **Known limitations** below. No files were moved as part of this documentation review.
+The backend's static-file middleware points to a `public/` directory, but that directory is absent from the current tree. Consequently, the checked-in `index.html` is not automatically served at `/`. See **Known limitations** below. No files were moved as part of this documentation review.
 
 ## 🛒 Hardware Required
 
@@ -68,24 +68,24 @@ See [wiring_diagram.md](wiring_diagram.md) for the complete wiring guide.
 - Node.js 18 or newer and npm
 - Arduino IDE with the ESP32 board package
 - ESP32 development board, MFRC522 reader, RFID cards, two LEDs with current-limiting resistors, and an active buzzer
-- The \`MFRC522\` and \`ArduinoJson\` Arduino libraries
+- The `MFRC522` and `ArduinoJson` Arduino libraries
 
 ### 1. Start the backend
 
-\`\`\`bash
+```bash
 git clone https://github.com/NirmalyaLenka/-AutoAttend-ESP32-RFID-Automatic-Attendance-System.git autoattend
 cd autoattend
 npm install
 npm start
-\`\`\`
+```
 
-The server listens on port \`3000\` by default. The SQLite database file is \`attendance.db\` in the server's working directory; set \`PORT\` or \`DB_FILE\` environment variables to change those values.
+The server listens on port `3000` by default. The SQLite database file is `attendance.db` in the server's working directory; set `PORT` or `DB_FILE` environment variables to change those values.
 
-**Current limitation:** the API can start independently, but \`GET /\` will not serve the dashboard from the current tree because \`server.js\` serves \`public/\` while the only checked-in \`index.html\` is at the repository root. This review documents the mismatch; it does not change server code or move files.
+**Current limitation:** the API can start independently, but `GET /` will not serve the dashboard from the current tree because `server.js` serves `public/` while the only checked-in `index.html` is at the repository root. This review documents the mismatch; it does not change server code or move files.
 
 ### 2. Configure and upload the ESP32 firmware
 
-Open \`attendance_firmware.ino\` from the repository root. Replace the Wi-Fi placeholders and \`SERVER_URL\` with the SSID, password, and LAN address of the computer running the server, for example \`http://192.168.1.100:3000\` (no trailing slash).
+Open `attendance_firmware.ino` from the repository root. Replace the Wi-Fi placeholders and `SERVER_URL` with the SSID, password, and LAN address of the computer running the server, for example `http://192.168.1.100:3000` (no trailing slash).
 
 The sketch contains no working serial setup wizard despite a comment suggesting one. Install the ESP32 Arduino board package, select **ESP32 Dev Module** (or the matching board), select the correct serial port, and upload. Open Serial Monitor at **115200 baud** to inspect connection messages. The ESP32 and server must be able to reach each other on the same network.
 
@@ -107,7 +107,7 @@ Use [wiring_diagram.md](wiring_diagram.md) as the pin reference. The MFRC522 is 
 
 ### 4. Check the API
 
-Open \`http://localhost:3000/api/dashboard\` to check whether the backend responds with JSON. The dashboard's \`index.html\` uses relative \`/api/...\` paths and a WebSocket at the current host, so opening it directly as a \`file://\` page is not a substitute for serving it from the backend.
+Open `http://localhost:3000/api/dashboard` to check whether the backend responds with JSON. The dashboard's `index.html` uses relative `/api/...` paths and a WebSocket at the current host, so opening it directly as a `file://` page is not a substitute for serving it from the backend.
 
 Register only test/student data you are authorized to handle. See [api_reference.md](api_reference.md) for endpoint payloads.
 
@@ -208,7 +208,7 @@ Key files and folders (not exhaustive):
 - The firmware reads card UIDs from an MFRC522 over SPI, alternates each card's local state between ENTRY and EXIT, and posts events to the Node.js API.
 - The server stores records in SQLite and broadcasts new events over WebSocket. Unknown UIDs are auto-registered with a placeholder name.
 - The firmware stores its per-card IN/OUT state in ESP32 NVS and updates that state only after a successful HTTP response.
-- The dashboard file is at the repository root, while the Express static middleware expects \`public/\`. The current repository therefore does not provide a working \`/\` dashboard route without a code or layout fix.
+- The dashboard file is at the repository root, while the Express static middleware expects `public/`. The current repository therefore does not provide a working `/` dashboard route without a code or layout fix.
 - The API uses permissive CORS and has no authentication or authorization. Do not expose it to the public internet or forward port 3000 from a router. Attendance records can contain personal data; use only on a trusted network and protect the database.
 - The server and firmware were inspected, but no Node.js run, Arduino build, API test, or physical RFID test was performed during this documentation pass.
 
