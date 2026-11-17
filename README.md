@@ -1,6 +1,6 @@
 # 📡 AutoAttend – ESP32 RFID Automatic Attendance System
 
-> **Beginner-friendly · Zero cloud required · Real-time dashboard · Open-source MIT**
+> **Local-first prototype · REST API + WebSocket · Open-source MIT**
 
 A local-network attendance prototype using an **ESP32 microcontroller**, an **MFRC522 RFID reader**, a Node.js API, and SQLite.
 Students tap an RFID card to record **entry** and **exit** events. The server stores records and broadcasts updates over WebSocket. The dashboard HTML is checked in, but a path mismatch currently prevents the backend from serving it at the root URL; see the setup and known-limitations sections.
@@ -21,7 +21,7 @@ Students tap an RFID card to record **entry** and **exit** events. The server st
 | 🗄️ SQLite database | Zero setup, everything stored in a single file |
 | 📋 Student registration | The POST /api/students endpoint stores names, roll numbers and class metadata; the dashboard UI is not currently served by the backend |
 | 🔌 Offline resilience | ESP32 retries WiFi; state survives reboots using NVS flash |
-| 🧪 Built-in simulator | Test the dashboard without any hardware |
+| 🧪 Simulator endpoint | POST /api/simulate can create demo events without RFID hardware |
 | 🌐 REST API | Export records, filter by date, integrate with any system |
 | 💸 Cheap hardware | Full BOM under ₹600 / $8 |
 
