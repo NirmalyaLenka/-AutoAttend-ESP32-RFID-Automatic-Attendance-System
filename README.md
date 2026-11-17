@@ -2,8 +2,8 @@
 
 > **Beginner-friendly · Zero cloud required · Real-time dashboard · Open-source MIT**
 
-A complete automatic attendance system using an **ESP32 microcontroller** and an **MFRC522 RFID reader**.
-Students tap their RFID card at the classroom door. The system logs **entry** and **exit** timestamps, calculates time spent in class, and streams everything live to a beautiful web dashboard hosted on your local network.
+A local-network attendance prototype using an **ESP32 microcontroller**, an **MFRC522 RFID reader**, a Node.js API, and SQLite.
+Students tap an RFID card to record **entry** and **exit** events. The server stores records and broadcasts updates over WebSocket. The dashboard HTML is checked in, but a path mismatch currently prevents the backend from serving it at the root URL; see the setup and known-limitations sections.
 
 ---
 
@@ -19,7 +19,7 @@ Students tap their RFID card at the classroom door. The system logs **entry** an
 | ⏱️ Duration tracking | Calculates exact time each student spent in class |
 | 📡 Live event transport | The API broadcasts events over WebSocket; the checked-in dashboard is not currently served by the backend path configuration |
 | 🗄️ SQLite database | Zero setup, everything stored in a single file |
-| 📋 Student registration | Register card UIDs with names, roll numbers, class from the dashboard |
+| 📋 Student registration | The POST /api/students endpoint stores names, roll numbers and class metadata; the dashboard UI is not currently served by the backend |
 | 🔌 Offline resilience | ESP32 retries WiFi; state survives reboots using NVS flash |
 | 🧪 Built-in simulator | Test the dashboard without any hardware |
 | 🌐 REST API | Export records, filter by date, integrate with any system |
